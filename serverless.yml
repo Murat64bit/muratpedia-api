@@ -10,14 +10,32 @@ functions:
     handler: bin/main
     events:
       - http:
-          path: /createUser
+          path: /register
           method: POST
       - http:
           path: /addArticle
           method: POST
       - http:
-          path: /read
+          path: /login
+          method: POST
+      - http:
+          path: /getUsers
           method: GET
+      - http:
+          path: /getArticles
+          method: GET
+      - http:
+          path: /getUserById
+          method: GET
+      - http:
+          path: /getArticlesByTitle
+          method: GET
+      - http:
+          path: /deleteUserById
+          method: DELETE
+      - http:
+          path: /deleteArticleByTitle
+          method: DELETE
 package:
   patterns:
     - "!*/**"
