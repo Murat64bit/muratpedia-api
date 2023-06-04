@@ -1,0 +1,24 @@
+service: serverless-rest-api
+frameworkVersion: ">=1.28.0"
+provider:
+  name: aws
+  runtime: go1.x
+  region: eu-central-1
+  stage: ${opt:stage}
+functions:
+  api:
+    handler: bin/main
+    events:
+      - http:
+          path: /createUser
+          method: POST
+      - http:
+          path: /addArticle
+          method: POST
+      - http:
+          path: /read
+          method: GET
+package:
+  patterns:
+    - "!*/**"
+    - bin/main

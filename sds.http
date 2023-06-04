@@ -1,0 +1,13 @@
+### Read User
+GET https://kxa7w7fp14.execute-api.eu-central-1.amazonaws.com/prod/read
+
+### Create user
+POST https://kxa7w7fp14.execute-api.eu-central-1.amazonaws.com/prod/addArticle
+content-type: application/json
+
+{
+    "title":"Atatürk",
+    "description":"1881 yılında selanikte doğmuştur",
+    "author":"Murat Türk"
+    
+}
