@@ -15,7 +15,7 @@ type ErrorBody struct {
 	ErrorMsg *string `json:"error,omitempty"`
 }
 
-func RegisterUser(req events.APIGatewayProxyRequest, mongoColl mongo.Collection) (
+func RegisterUser(req events.APIGatewayProxyRequest, mongoColl *mongo.Collection) (
 	*events.APIGatewayProxyResponse, error,
 ) {
 	result, err := user.RegisterUser(req, mongoColl)
