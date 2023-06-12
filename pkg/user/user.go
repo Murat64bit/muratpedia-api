@@ -8,6 +8,7 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/murat64bit/muratpedia-api/pkg/jwt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -114,5 +115,111 @@ func RegisterUser(ctx context.Context, request events.APIGatewayProxyRequest, mo
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       "User created successfully",
+	}, nil
+}
+
+// JWT tabanlı oturum açma işlemini gerçekleştiren işlev
+func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (events.APIGatewayProxyResponse, error) {
+	var loginData struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required"`
+	}
+
+	type LoginResponse struct {
+		Token    string
+		UserID   int
+		UserName string
+	}
+
+	err := json.Unmarshal([]byte(request.Body), &loginData)
+	if err != nil {
+		log.Println("JSON Unmarshal error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       "Bad Request",
+		}, nil
+	}
+
+	// Kullanıcıyı doğrula
+	filter := bson.M{"email": loginData.Email}
+	result := mongoColl.FindOne(ctx, filter)
+	if result.Err() != nil {
+		log.Println("FindOne error:", result.Err())
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnauthorized,
+			Body:       "Unauthorized",
+		}, nil
+	}
+
+	var user UserData
+	err = result.Decode(&user)
+	if err != nil {
+		log.Println("Decode error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginData.Password))
+	if err != nil {
+		log.Println("Password comparison error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnauthorized,
+			Body:       "Unauthorized",
+		}, nil
+	}
+
+	tokenString, err := jwt.GenerateToken(user.Username)
+	if err != nil {
+		log.Println("JWT Signing error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	valid, err := jwt.ValidateToken(tokenString)
+	if err != nil {
+		log.Println("JWT Validation error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	if !valid {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnauthorized,
+			Body:       "Unauthorized",
+		}, nil
+	}
+
+	username, err := jwt.GetUsernameFromContext(ctx)
+	if err != nil {
+		log.Println("Failed to retrieve username from context:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	response := LoginResponse{
+		Token:    tokenString,
+		UserName: username,
+	}
+
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		log.Println("JSON marshal error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(jsonResponse),
 	}, nil
 }

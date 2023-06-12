@@ -162,7 +162,7 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/serverless-rest-api/prod/1685904143686-2023-06-04T18:42:23.686Z/serverless-rest-api.zip"
+          "S3Key": "serverless/serverless-rest-api/prod/1686559943301-2023-06-12T08:52:23.301Z/serverless-rest-api.zip"
         },
         "Handler": "bin/main",
         "Runtime": "go1.x",
@@ -180,14 +180,14 @@
         "ApiLogGroup"
       ]
     },
-    "ApiLambdaVersionPnS28pLRHbQ9jFolNSyUthZvyZFmtZKQvG51WeEceiE": {
+    "ApiLambdaVersionPZN5pIMw07HkVgXCFavE5RTnvp8bkPhWIGg90LZA": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "ApiLambdaFunction"
         },
-        "CodeSha256": "7b+xOwJTMMVV9AVJZz+Ru+fc47w34GCOvVxgkEXmxzE="
+        "CodeSha256": "oKA1Tu+6XjNjVBTcvtRCYTr4fX/kOx+5FfSorTE5Nvw="
       }
     },
     "ApiGatewayRestApi": {
@@ -317,6 +317,21 @@
           ]
         },
         "PathPart": "deleteUserById",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceDeletearticlebytitle": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "deleteArticleByTitle",
         "RestApiId": {
           "Ref": "ApiGatewayRestApi"
         }
@@ -690,7 +705,53 @@
         "ApiLambdaPermissionApiGateway"
       ]
     },
-    "ApiGatewayDeployment1685904140681": {
+    "ApiGatewayMethodDeletearticlebytitleDelete": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "DELETE",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceDeletearticlebytitle"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ApiLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "ApiLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayDeployment1686559937666": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -706,7 +767,8 @@
         "ApiGatewayMethodGetarticlesGet",
         "ApiGatewayMethodGetuserbyidGet",
         "ApiGatewayMethodGetarticlesbytitleGet",
-        "ApiGatewayMethodDeleteuserbyidDelete"
+        "ApiGatewayMethodDeleteuserbyidDelete",
+        "ApiGatewayMethodDeletearticlebytitleDelete"
       ]
     },
     "ApiLambdaPermissionApiGateway": {
@@ -759,7 +821,7 @@
     "ApiLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "ApiLambdaVersionPnS28pLRHbQ9jFolNSyUthZvyZFmtZKQvG51WeEceiE"
+        "Ref": "ApiLambdaVersionPZN5pIMw07HkVgXCFavE5RTnvp8bkPhWIGg90LZA"
       },
       "Export": {
         "Name": "sls-serverless-rest-api-prod-ApiLambdaFunctionQualifiedArn"

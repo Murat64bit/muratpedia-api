@@ -26,6 +26,16 @@ func RegisterUser(ctx context.Context, request events.APIGatewayProxyRequest, mo
 	return apiResponse(http.StatusCreated, result)
 }
 
+func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (*events.APIGatewayProxyResponse, error) {
+	result, err := user.LoginUser(ctx, request, mongoColl)
+	if err != nil {
+		return apiResponse(http.StatusBadRequest, ErrorBody{
+			aws.String(err.Error()),
+		})
+	}
+	return apiResponse(http.StatusCreated, result)
+}
+
 func UnhandledMethod() (*events.APIGatewayProxyResponse, error) {
 	return apiResponse(http.StatusMethodNotAllowed, ErrorMethodNotAllowed)
 }

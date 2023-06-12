@@ -15,6 +15,7 @@ var (
 	dbClient          *mongo.Client
 	userCollection    *mongo.Collection
 	articleCollection *mongo.Collection
+	jwtKey            = []byte("my_secret_key")
 )
 
 func main() {
@@ -48,8 +49,8 @@ func main() {
 // POST isteğini yönlendirme işlevi
 func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	switch request.Path {
-	// case "/login":
-	// 	return handlers.LoginUser(ctx, request)
+	case "/login":
+		return handlers.LoginUser(ctx, request, *userCollection)
 	case "/register":
 		return handlers.RegisterUser(ctx, request, *userCollection)
 	// case "/addArticle":
