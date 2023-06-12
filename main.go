@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -47,12 +46,12 @@ func main() {
 }
 
 // POST isteğini yönlendirme işlevi
-func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	switch request.Path {
 	// case "/login":
 	// 	return handlers.LoginUser(ctx, request)
 	case "/register":
-		return handlers.RegisterUser(request, *userCollection)
+		return handlers.RegisterUser(ctx, request, *userCollection)
 	// case "/addArticle":
 	// 	return handleAddArticleRequest(ctx, request)
 	// case "/getUsers":
@@ -68,9 +67,6 @@ func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProx
 	// case "/deleteArticleByTitle":
 	// 	return handleDeleteArticleByTitle(ctx, request)
 	default:
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusNotFound,
-			Body:       "Not Found",
-		}, nil
+		return handlers.UnhandledMethod()
 	}
 }
