@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Murat64bit/muratpedia-api/pkg/handlers"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/murat64bit/muratpedia-api/pkg/handlers"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -52,7 +52,7 @@ func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProx
 	// case "/login":
 	// 	return handlers.LoginUser(ctx, request)
 	case "/register":
-		return handlers.RegisterUser(ctx, request)
+		return handlers.RegisterUser(request, *userCollection)
 	// case "/addArticle":
 	// 	return handleAddArticleRequest(ctx, request)
 	// case "/getUsers":
