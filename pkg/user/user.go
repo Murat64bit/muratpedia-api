@@ -33,7 +33,7 @@ type UserData struct {
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 
-func getUserByEmail(email string, mongoColl *mongo.Collection) (*UserData, error) {
+func getUserByEmail(email string, mongoColl mongo.Collection) (*UserData, error) {
 	filter := bson.M{"email": email}
 	result := mongoColl.FindOne(context.Background(), filter)
 	if result.Err() != nil {
@@ -56,7 +56,7 @@ func validateEmail(email string) bool {
 	return emailRegex.MatchString(email)
 }
 
-func RegisterUser(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl *mongo.Collection) (events.APIGatewayProxyResponse, error) {
+func RegisterUser(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (events.APIGatewayProxyResponse, error) {
 	var newUser UserData
 	err := json.Unmarshal([]byte(request.Body), &newUser)
 	if err != nil {
