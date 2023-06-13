@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/murat64bit/muratpedia-api/pkg/handlers"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -46,8 +49,20 @@ func main() {
 	lambda.Start(handlePostRequestRouting)
 }
 
-// POST isteğini yönlendirme işlevi
 func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	// JWT tokenını al
+	tokenString := request.Headers["Authorization"]
+	if tokenString == "" {
+		return handlers.UnauthorizedResponse()
+	}
+
+	// JWT tokenını doğrula
+	valid, _ := validateJWT(tokenString)
+	if !valid {
+		return handlers.UnauthorizedResponse()
+	}
+
+	// İstek yolu (Path) üzerindeki işlemi belirle ve ilgili işlevi çağır
 	switch request.Path {
 	case "/login":
 		return handlers.LoginUser(ctx, request, *userCollection)
@@ -70,4 +85,52 @@ func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProx
 	default:
 		return handlers.UnhandledMethod()
 	}
+}
+
+// JWT doğrulama işlemi
+func validateJWT(tokenString string) (bool, string) {
+	// JWT tokenini doğrula
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// JWT'nin doğrulama anahtarını kullanarak doğrula
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Invalid token")
+		}
+		return jwtKey, nil
+	})
+
+	if err != nil || !token.Valid {
+		return false, ""
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, ""
+	}
+
+	username, ok := claims["username"].(string)
+	if !ok {
+		return false, ""
+	}
+
+	return true, username
+}
+
+// JWT oluşturma işlemi
+func generateJWT(userID string) (string, error) {
+	// JWT tokeni oluşturmak için bir dizi içeriği hazırlayın
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(time.Hour * 24).Unix(), // Tokenin geçerlilik süresi (örnekte 1 gün)
+	}
+
+	// Token oluşturucu yapılandırması
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Tokeni imzalayarak string olarak döndürün
+	signedToken, err := token.SignedString(jwtKey)
+	if err != nil {
+		return "", err
+	}
+
+	return signedToken, nil
 }

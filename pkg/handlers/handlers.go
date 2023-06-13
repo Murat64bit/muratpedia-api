@@ -110,3 +110,12 @@ func DeleteArticleByTitle(ctx context.Context, request events.APIGatewayProxyReq
 func UnhandledMethod() (*events.APIGatewayProxyResponse, error) {
 	return apiResponse(http.StatusMethodNotAllowed, ErrorMethodNotAllowed)
 }
+
+func UnauthorizedResponse() (*events.APIGatewayProxyResponse, error) {
+	response := events.APIGatewayProxyResponse{
+		StatusCode: http.StatusUnauthorized,
+		Headers:    map[string]string{"Content-Type": "application/json"},
+		Body:       `{"message": "Unauthorized"}`,
+	}
+	return &response, nil
+}
