@@ -8,8 +8,8 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/murat64bit/muratpedia-api/pkg/jwt"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -125,12 +125,6 @@ func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongo
 		Password string `json:"password" validate:"required"`
 	}
 
-	type LoginResponse struct {
-		Token    string
-		UserID   int
-		UserName string
-	}
-
 	err := json.Unmarshal([]byte(request.Body), &loginData)
 	if err != nil {
 		log.Println("JSON Unmarshal error:", err)
@@ -170,48 +164,39 @@ func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongo
 		}, nil
 	}
 
-	tokenString, err := jwt.GenerateToken(user.Username)
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       "Succesfuly you are logged in",
+	}, nil
+}
+
+func GetUsers(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (events.APIGatewayProxyResponse, error) {
+
+	// MongoDB'den veri alın
+	filter := bson.M{}
+	cursor, err := mongoColl.Find(ctx, filter)
 	if err != nil {
-		log.Println("JWT Signing error:", err)
+		log.Println("Find error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+	defer cursor.Close(ctx)
+
+	var result []bson.M
+	if err := cursor.All(ctx, &result); err != nil {
+		log.Println("Cursor All error:", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       "Internal Server Error",
 		}, nil
 	}
 
-	valid, err := jwt.ValidateToken(tokenString)
+	// Elde edilen verileri JSON formatında döndür
+	responseBody, err := json.Marshal(result)
 	if err != nil {
-		log.Println("JWT Validation error:", err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       "Internal Server Error",
-		}, nil
-	}
-
-	if !valid {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusUnauthorized,
-			Body:       "Unauthorized",
-		}, nil
-	}
-
-	username, err := jwt.GetUsernameFromContext(ctx)
-	if err != nil {
-		log.Println("Failed to retrieve username from context:", err)
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       "Internal Server Error",
-		}, nil
-	}
-
-	response := LoginResponse{
-		Token:    tokenString,
-		UserName: username,
-	}
-
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		log.Println("JSON marshal error:", err)
+		log.Println("JSON Marshal error:", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       "Internal Server Error",
@@ -220,6 +205,89 @@ func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongo
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       string(jsonResponse),
+		Body:       string(responseBody),
+	}, nil
+}
+
+func GetUserById(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (events.APIGatewayProxyResponse, error) {
+
+	// Getirilecek kullanıcının _id'sini al
+	id := request.QueryStringParameters["_id"]
+
+	// _id'yi MongoDB ObjectID formatına dönüştür
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Println("Invalid ObjectID:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       "Invalid ObjectID",
+		}, nil
+	}
+
+	// MongoDB'den kullanıcıyı getir
+	filter := bson.M{"_id": objectID}
+	var user UserData
+	err = mongoColl.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		log.Println("FindOne error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusNotFound,
+			Body:       "User not found",
+		}, nil
+	}
+
+	// Kullanıcıyı JSON formatına dönüştür
+	responseBody, err := json.Marshal(user)
+	if err != nil {
+		log.Println("JSON Marshal error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(responseBody),
+	}, nil
+}
+
+func DeleteUserById(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (events.APIGatewayProxyResponse, error) {
+
+	// Silinecek kullanıcının _id'sini al
+	id := request.QueryStringParameters["_id"]
+
+	// _id'yi MongoDB ObjectID formatına dönüştür
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Println("Invalid ObjectID:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       "Invalid ObjectID",
+		}, nil
+	}
+
+	// MongoDB'den veri silin
+	filter := bson.M{"_id": objectID}
+	result, err := mongoColl.DeleteOne(ctx, filter)
+	if err != nil {
+		log.Println("DeleteOne error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
+	}
+
+	// Silinen kullanıcı sayısını kontrol et
+	if result.DeletedCount == 0 {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusNotFound,
+			Body:       "User not found",
+		}, nil
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       "User deleted successfully",
 	}, nil
 }

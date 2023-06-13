@@ -53,20 +53,20 @@ func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProx
 		return handlers.LoginUser(ctx, request, *userCollection)
 	case "/register":
 		return handlers.RegisterUser(ctx, request, *userCollection)
-	// case "/addArticle":
-	// 	return handleAddArticleRequest(ctx, request)
-	// case "/getUsers":
-	// 	return handleGetUsersRequest(ctx, request)
-	// case "/getArticles":
-	// 	return handleGetArticlesRequest(ctx, request)
-	// case "/getUserById":
-	// 	return handleGetUserByID(ctx, request)
-	// case "/getArticlesByTitle":
-	// 	return handleGetArticlesByTitle(ctx, request)
-	// case "/deleteUserById":
-	// 	return handleDeleteUserByID(ctx, request)
-	// case "/deleteArticleByTitle":
-	// 	return handleDeleteArticleByTitle(ctx, request)
+	case "/addArticle":
+		return handlers.AddArticle(ctx, request, *userCollection)
+	case "/getUsers":
+		return handlers.GetUsers(ctx, request, *userCollection)
+	case "/getArticles":
+		return handlers.GetArticles(ctx, request, *userCollection)
+	case "/getUserById":
+		return handlers.GetUserById(ctx, request, *userCollection)
+	case "/getArticlesByTitle":
+		return handlers.GetArticlesByTitle(ctx, request, *userCollection)
+	case "/deleteUserById":
+		return handlers.DeleteUserById(ctx, request, *userCollection)
+	case "/deleteArticleByTitle":
+		return handlers.DeleteArticleByTitle(ctx, request, *userCollection)
 	default:
 		return handlers.UnhandledMethod()
 	}
