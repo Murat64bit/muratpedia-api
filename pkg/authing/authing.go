@@ -1,9 +1,22 @@
 package authing
 
+import (
+	"log"
+	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/murat64bit/muratpedia-api/pkg/user"
+)
+
 type Claims struct {
 	Username string `json:"username"`
 	jwt.StandardClaims
 }
+
+var (
+	jwtKey = []byte("my_secret_key")
+)
 
 func validateJWTandGetUserName(request events.APIGatewayProxyRequest) (string, bool) {
 	tokenString := request.Headers["Authorization"]
