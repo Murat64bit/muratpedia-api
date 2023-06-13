@@ -16,7 +16,6 @@ var (
 	dbClient          *mongo.Client
 	userCollection    *mongo.Collection
 	articleCollection *mongo.Collection
-	jwtKey            = []byte("my_secret_key")
 )
 
 type Claims struct {
@@ -61,7 +60,7 @@ func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProx
 	default:
 
 		// JWT tokenını doğrula
-		username, valid := jwt_auth.validateJWTandGetUserName(request)
+		username, valid := authing.validateJWTandGetUserName(request)
 		if !valid {
 			return handlers.UnauthorizedResponse()
 		}
