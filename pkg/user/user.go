@@ -164,6 +164,21 @@ func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongo
 		}, nil
 	}
 
+	tokenString, err := generateJWT(userData)
+	if err != nil {
+		// JWT oluşturma hatası durumunda işlemler
+		return nil, err
+	}
+
+	// JWT dizesini kullanarak bir yanıt oluşturun
+	response := events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Body: tokenString,
+	}
+
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       "Succesfuly you are logged in",
