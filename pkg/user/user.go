@@ -8,6 +8,7 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/murat64bit/muratpedia-api/pkg/jwtutil"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -164,24 +165,29 @@ func LoginUser(ctx context.Context, request events.APIGatewayProxyRequest, mongo
 		}, nil
 	}
 
-	tokenString, err := generateJWT(userData)
+	tokenString, err := jwtutil.GenerateJWT(user.Username)
 	if err != nil {
 		// JWT oluşturma hatası durumunda işlemler
-		return nil, err
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnauthorized,
+			Body:       "Unauthorized",
+		}, err
 	}
 
-	// JWT dizesini kullanarak bir yanıt oluşturun
-	response := events.APIGatewayProxyResponse{
-		StatusCode: 200,
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-		},
-		Body: tokenString,
+	// JWT'yi yanıtla birlikte döndür
+	responseBody := map[string]string{"token": tokenString}
+	responseJSON, err := json.Marshal(responseBody)
+	if err != nil {
+		log.Println("JSON Marshal error:", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Internal Server Error",
+		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       "Succesfuly you are logged in",
+		Body:       string(responseJSON),
 	}, nil
 }
 

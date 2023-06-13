@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/murat64bit/muratpedia-api/pkg/handlers"
+	"github.com/murat64bit/muratpedia-api/pkg/jwtutil"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -57,17 +58,17 @@ func handlePostRequestRouting(ctx context.Context, request events.APIGatewayProx
 
 	case "/login":
 		return handlers.LoginUser(ctx, request, *userCollection)
+	case "/register":
+		return handlers.RegisterUser(ctx, request, *userCollection)
 	default:
 
 		// JWT tokenını doğrula
-		username, valid := authing.validateJWTandGetUserName(request)
+		username, valid := jwtutil.ValidateJWT(request)
 		if !valid {
 			return handlers.UnauthorizedResponse()
 		}
 
 		switch request.Path {
-		case "/register":
-			return handlers.RegisterUser(ctx, request, *userCollection)
 		case "/addArticle":
 			return handlers.AddArticle(ctx, request, *userCollection, username)
 		case "/getUsers":
