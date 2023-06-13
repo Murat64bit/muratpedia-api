@@ -31,7 +31,7 @@ type ArticleData struct {
 	Date        string `json:"date" validate:""`
 }
 
-func AddArticle(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (events.APIGatewayProxyResponse, error) {
+func AddArticle(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection, username string) (events.APIGatewayProxyResponse, error) {
 	currentTime := time.Now()
 
 	// İstek gövdesinden veriyi çözümle
@@ -47,7 +47,7 @@ func AddArticle(ctx context.Context, request events.APIGatewayProxyRequest, mong
 	data := bson.M{
 		"title":       articleData.Title,
 		"description": articleData.Description,
-		"author":      "username",
+		"author":      username,
 		"date":        currentTime.Format("02-01-2006"),
 	}
 

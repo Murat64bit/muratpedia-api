@@ -67,8 +67,8 @@ func DeleteUserById(ctx context.Context, request events.APIGatewayProxyRequest, 
 	return apiResponse(http.StatusCreated, result)
 }
 
-func AddArticle(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection) (*events.APIGatewayProxyResponse, error) {
-	result, err := article.AddArticle(ctx, request, mongoColl)
+func AddArticle(ctx context.Context, request events.APIGatewayProxyRequest, mongoColl mongo.Collection, username string) (*events.APIGatewayProxyResponse, error) {
+	result, err := article.AddArticle(ctx, request, mongoColl, username)
 	if err != nil {
 		return apiResponse(http.StatusBadRequest, ErrorBody{
 			aws.String(err.Error()),
